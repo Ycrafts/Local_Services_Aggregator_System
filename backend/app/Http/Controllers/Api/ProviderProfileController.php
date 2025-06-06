@@ -114,11 +114,11 @@ class ProviderProfileController extends Controller
 
         $profile->load(['user:id,first_name,last_name,phone_number,email,role', 'jobTypes']);
         
-        // Hide IDs and pivot data
+       
         $profile->makeHidden(['id', 'user_id']);
         $profile->user->makeHidden('id');
         
-        // Transform job types to remove IDs and pivot
+       
         $profile->job_types = $profile->jobTypes->map(function($jobType) {
             return [
                 'name' => $jobType->name,
