@@ -75,8 +75,8 @@ class JobController extends Controller
         $jobs = Job::with(['jobType', 'customerProfile.user'])
             ->where('customer_profile_id', $customerProfile->id)
             ->orderBy('created_at', 'desc')
-            ->get()
-            ->each(function ($job) {
+            ->paginate(10)
+            ->through(function ($job) {
                 $job->makeHidden(['customer_profile_id']);
                 if ($job->customerProfile) {
                     $job->customerProfile->makeHidden(['user_id']);
@@ -84,11 +84,10 @@ class JobController extends Controller
                         $job->customerProfile->user->makeHidden(['id']);
                     }
                 }
+                return $job;
             });
 
-        return response()->json([
-            'data' => $jobs
-        ]);
+        return response()->json($jobs);
     }
     
     public function show(Request $request, $id)
@@ -99,7 +98,7 @@ class JobController extends Controller
             return response()->json(['message' => 'Customer profile not found.'], 404);
         }
 
-        $job = Job::with(['jobType', 'customerProfile.user', 'assignedProvider.user'])
+        $job = Job::with(['jobType', 'customerProfile.user', 'assignedProvider.user', 'rating'])
             ->where('id', $id)
             ->where('customer_profile_id', $customerProfile->id)
             ->first();
@@ -118,6 +117,9 @@ class JobController extends Controller
         if ($job->assignedProvider && $job->assignedProvider->user) {
             $job->assignedProvider->user->makeHidden(['id']);
         }
+
+        // Add has_rating flag to the response
+        $job->has_rating = $job->rating->isNotEmpty();
 
         return response()->json($job);
     }
@@ -223,6 +225,10 @@ class JobController extends Controller
         $job->status = 'in_progress';
         $job->save();
 
+        // Reload the job with relationships
+        $job = Job::with(['jobType', 'customerProfile.user', 'assignedProvider.user'])
+            ->find($job->id);
+
         Notification::create([
             'user_id' => $profile->user_id,
             'job_id' => $job->id,
@@ -259,60 +265,38 @@ class JobController extends Controller
 
     public function providerRequestedJobs(Request $request)
     {
-        $providerProfile = ProviderProfile::where('user_id', Auth::id())->first();
+        $providerProfile = $request->user()->providerProfile;
 
         if (!$providerProfile) {
             return response()->json(['message' => 'Provider profile not found.'], 404);
         }
 
-        $jobs = ProviderProfileJob::where('provider_profile_id', $providerProfile->id)
+        $requestedJobs = ProviderProfileJob::with(['job.jobType', 'job.customerProfile.user'])
+            ->where('provider_profile_id', $providerProfile->id)
             ->whereHas('job', function ($query) {
-                $query->where('status', 'open');
+                $query->where('status', 'open'); // Only open jobs
             })
-            ->with(['job.jobType', 'job.customerProfile.user'])
-            ->paginate(10)
-            ->each(function ($providerJob) {
-                $providerJob->makeHidden(['job_id', 'provider_profile_id']);
-                if ($providerJob->job) {
-                    $providerJob->job->makeHidden(['customer_profile_id']);
-                    if ($providerJob->job->customerProfile) {
-                        $providerJob->job->customerProfile->makeHidden(['user_id']);
-                        if ($providerJob->job->customerProfile->user) {
-                            $providerJob->job->customerProfile->user->makeHidden(['id']);
-                        }
-                    }
-                }
-            });
+            ->orderBy('created_at', 'desc')
+            ->paginate(10); // Add pagination
 
-        return response()->json($jobs);
+        return response()->json($requestedJobs);
     }
 
     public function providerSelectedJobs(Request $request)
     {
-        $providerProfile = ProviderProfile::where('user_id', Auth::id())->first();
+        $providerProfile = $request->user()->providerProfile;
 
         if (!$providerProfile) {
             return response()->json(['message' => 'Provider profile not found.'], 404);
         }
 
-        $jobs = ProviderProfileJob::where('provider_profile_id', $providerProfile->id)
-            ->where('is_selected', true)
-            ->with(['job.jobType', 'job.customerProfile.user'])
-            ->paginate(10)
-            ->each(function ($providerJob) {
-                $providerJob->makeHidden(['job_id', 'provider_profile_id']);
-                if ($providerJob->job) {
-                    $providerJob->job->makeHidden(['customer_profile_id']);
-                    if ($providerJob->job->customerProfile) {
-                        $providerJob->job->customerProfile->makeHidden(['user_id']);
-                        if ($providerJob->job->customerProfile->user) {
-                            $providerJob->job->customerProfile->user->makeHidden(['id']);
-                        }
-                    }
-                }
-            });
+        $selectedJobs = ProviderProfileJob::with(['job.jobType', 'job.customerProfile.user', 'job.rating'])
+            ->where('provider_profile_id', $providerProfile->id)
+            ->where('is_selected', true) // Jobs that are selected by customer for this provider
+            ->orderBy('created_at', 'desc')
+            ->paginate(10); // Add pagination
 
-        return response()->json($jobs);
+        return response()->json($selectedJobs);
     }
 
     public function providerMarkDone(Request $request, $jobId)

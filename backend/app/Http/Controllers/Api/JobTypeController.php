@@ -10,7 +10,7 @@ class JobTypeController extends Controller
 {
     public function index()
     {
-        $jobTypes = JobType::all();
+        $jobTypes = JobType::paginate(6);
         return response()->json($jobTypes);
     }
 } 

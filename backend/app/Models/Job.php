@@ -30,7 +30,7 @@ class Job extends Model
                     ->withPivot('is_interested', 'is_selected')
                     ->withTimestamps();
     }
-    
+
     public function assignedProvider()
     {
         return $this->belongsTo(ProviderProfile::class, 'assigned_provider_id');

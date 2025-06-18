@@ -24,6 +24,7 @@ class ProviderProfileController extends Controller
         }
 
         $profileData = [
+            'id' => $profile->id,
             'bio' => $profile->bio,
             'address' => $profile->address,
             'rating' => $profile->rating,
@@ -82,7 +83,7 @@ class ProviderProfileController extends Controller
 
         return response()->json([
             'message' => 'Provider profile created successfully',
-            'profile' => $profile->load(['first_name,last_name,phone_number,email,role', 'jobTypes'])
+            'profile' => $profile->load(['user', 'jobTypes'])
         ], 201);
     }
 
