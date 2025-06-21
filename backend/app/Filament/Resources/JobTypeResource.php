@@ -17,7 +17,10 @@ class JobTypeResource extends Resource
 {
     protected static ?string $model = JobType::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?int $navigationSort = 4;
+
+
+    protected static ?string $navigationIcon = 'heroicon-o-tag';
 
     public static function form(Form $form): Form
     {
@@ -37,10 +40,31 @@ class JobTypeResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('baseline_price')
                     ->numeric()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('provider_count')
+                    ->label('Providers')
+                    ->getStateUsing(function ($record) {
+                        return $record->providerProfiles()->count();
+                    })
+                    ->sortable(query: function (Builder $query, string $direction): Builder {
+                        return $query->withCount('providerProfiles')->orderBy('provider_profiles_count', $direction);
+                    })
+                    ->badge()
+                    ->color('success'),
+                Tables\Columns\TextColumn::make('total_jobs')
+                    ->label('Total Jobs')
+                    ->getStateUsing(function ($record) {
+                        return $record->jobs()->count();
+                    })
+                    ->sortable(query: function (Builder $query, string $direction): Builder {
+                        return $query->withCount('jobs')->orderBy('jobs_count', $direction);
+                    })
+                    ->badge()
+                    ->color('info'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
