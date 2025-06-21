@@ -12,6 +12,7 @@ class NotificationProvider with ChangeNotifier {
   bool _hasMorePages = true;
   int _totalUnreadCount = 0;
   bool _isCountingUnread = false;
+  DateTime? _lastReadTimestamp;
 
   NotificationProvider(this._notificationRepository) {
     _fetchNotifications();
@@ -41,13 +42,39 @@ class NotificationProvider with ChangeNotifier {
 
     try {
       final response = await _notificationRepository.fetchNotifications(page: _currentPage);
+      
+      // If we have a last read timestamp, only count notifications newer than that as unread
+      if (_lastReadTimestamp != null) {
+        final newNotifications = response.data.map((n) {
+          final isNewUnread = n.timestamp.isAfter(_lastReadTimestamp!) && !n.isRead;
+          return Notification(
+            id: n.id,
+            message: n.message,
+            timestamp: n.timestamp,
+            isRead: !isNewUnread,
+            type: n.type,
+            jobId: n.jobId,
+          );
+        }).toList();
+        
+        if (refresh) {
+          _notifications = newNotifications;
+        } else {
+          _notifications.addAll(newNotifications);
+        }
+      } else {
       if (refresh) {
         _notifications = response.data;
       } else {
         _notifications.addAll(response.data);
       }
+      }
+      
       _hasMorePages = response.hasNextPage;
       _currentPage++;
+      
+      // Update unread count based on notifications after last read timestamp
+      _updateUnreadCount();
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -56,24 +83,24 @@ class NotificationProvider with ChangeNotifier {
     }
   }
 
+  void _updateUnreadCount() {
+    if (_lastReadTimestamp != null) {
+      _totalUnreadCount = _notifications.where((n) => 
+        n.timestamp.isAfter(_lastReadTimestamp!) && !n.isRead
+      ).length;
+    } else {
+      _totalUnreadCount = _notifications.where((n) => !n.isRead).length;
+    }
+  }
+
   Future<void> fetchTotalUnreadNotificationsCount() async {
     if (_isCountingUnread) return;
     _isCountingUnread = true;
     notifyListeners();
 
-    int count = 0;
-    int page = 1;
-    bool hasMore = true;
-
     try {
-      while (hasMore) {
-        final response = await _notificationRepository.fetchNotifications(page: page);
-        count += response.data.where((n) => !n.isRead).length;
-        hasMore = response.hasNextPage;
-        page++;
-      }
-      _totalUnreadCount = count;
-      notifyListeners();
+      await _fetchNotifications(refresh: true);
+      _updateUnreadCount();
     } catch (e) {
       debugPrint('Error fetching total unread count: $e');
     } finally {
@@ -84,7 +111,6 @@ class NotificationProvider with ChangeNotifier {
 
   Future<void> refreshNotifications() async {
     await _fetchNotifications(refresh: true);
-    fetchTotalUnreadNotificationsCount();
   }
 
   Future<void> loadMoreNotifications() async {
@@ -109,6 +135,46 @@ class NotificationProvider with ChangeNotifier {
         }
         notifyListeners();
       }
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
+  }
+
+  Future<void> markAllNotificationsAsRead() async {
+    try {
+      // Set the last read timestamp to now
+      _lastReadTimestamp = DateTime.now();
+      
+      // Get all notifications that need to be marked as read
+      final notificationsToMark = _notifications.where((n) => 
+        n.timestamp.isBefore(_lastReadTimestamp!) && !n.isRead
+      ).toList();
+      
+      // Mark each notification as read
+      for (final notification in notificationsToMark) {
+        await _notificationRepository.markAsRead(notification.id);
+      }
+
+      // Update local state
+      _notifications = _notifications.map((n) {
+        if (n.timestamp.isBefore(_lastReadTimestamp!)) {
+          return Notification(
+            id: n.id,
+            message: n.message,
+            timestamp: n.timestamp,
+            isRead: true,
+            type: n.type,
+            jobId: n.jobId,
+          );
+        }
+        return n;
+      }).toList();
+
+      // Update unread count
+      _updateUnreadCount();
+      
+      notifyListeners();
     } catch (e) {
       _error = e.toString();
       notifyListeners();

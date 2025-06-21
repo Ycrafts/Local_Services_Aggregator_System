@@ -6,6 +6,7 @@ import '../screens/home/customer_home_screen.dart'; // Import for navigation
 import '../screens/jobs/jobs_screen.dart'; // Import for navigation
 import '../screens/notifications/notification_screen.dart'; // Import for navigation
 import '../screens/profile/customer_profile_screen.dart'; // Import for navigation
+import '../../../main.dart'; // For AppRoutes
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -138,7 +139,7 @@ class AppDrawer extends StatelessWidget {
                   onTap: () async {
                     await authProvider.logout();
                     if (context.mounted) {
-                      Navigator.pushReplacementNamed(context, '/login');
+                      Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
                     }
                   },
                 ),

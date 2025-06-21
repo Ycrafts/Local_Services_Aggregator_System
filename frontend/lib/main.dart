@@ -9,11 +9,13 @@ import 'domain/repositories/job_type_repository.dart';
 import 'domain/repositories/notification_repository.dart';
 import 'domain/repositories/profile_repository.dart';
 import 'domain/repositories/provider_job_request_repository.dart';
+import 'domain/repositories/provider_profile_repository.dart';
 import 'presentation/providers/auth_provider.dart';
 import 'presentation/providers/job_type_provider.dart';
 import 'presentation/providers/notification_provider.dart';
 import 'presentation/providers/profile_provider.dart';
 import 'presentation/providers/provider_job_request_provider.dart';
+import 'presentation/providers/provider_profile_provider.dart';
 import 'presentation/screens/auth/login_screen.dart';
 import 'presentation/screens/auth/register_screen.dart';
 import 'presentation/screens/home/customer_home_screen.dart';
@@ -23,6 +25,7 @@ import 'presentation/screens/profile/customer_profile_setup_screen.dart';
 import 'presentation/providers/job_provider.dart';
 import 'domain/repositories/job_repository.dart';
 import 'package:dio/dio.dart';
+import 'presentation/screens/profile/provider_profile_screen.dart';
 
 void main() async {
   print('App startup: main() started');
@@ -37,6 +40,7 @@ void main() async {
   final notificationRepository = NotificationRepository(apiClient);
   final profileRepository = ProfileRepository(apiClient);
   final providerJobRequestRepository = ProviderJobRequestRepository(apiClient);
+  final providerProfileRepository = ProviderProfileRepository(apiClient);
 
   runApp(MyApp(
     prefs: prefs,
@@ -47,6 +51,7 @@ void main() async {
     apiClient: apiClient,
     jobRepository: jobRepository,
     providerJobRequestRepository: providerJobRequestRepository,
+    providerProfileRepository: providerProfileRepository,
   ));
   print('App startup: runApp() called');
 }
@@ -60,6 +65,7 @@ class MyApp extends StatelessWidget {
   final ApiClient apiClient;
   final JobRepository jobRepository;
   final ProviderJobRequestRepository providerJobRequestRepository;
+  final ProviderProfileRepository providerProfileRepository;
 
   const MyApp({
     super.key,
@@ -71,6 +77,7 @@ class MyApp extends StatelessWidget {
     required this.apiClient,
     required this.jobRepository,
     required this.providerJobRequestRepository,
+    required this.providerProfileRepository,
   });
 
   @override
@@ -105,6 +112,18 @@ class MyApp extends StatelessWidget {
             return profileProvider;
           },
         ),
+        ChangeNotifierProvider(
+          create: (_) => ProviderJobRequestProvider(providerJobRequestRepository),
+        ),
+        ChangeNotifierProvider(
+          create: (context) {
+            print('ProviderProfileProvider created');
+            final providerProfileProvider = ProviderProfileProvider(providerProfileRepository);
+            // It might be useful to connect this to AuthProvider or JobTypeProvider if logic dictates
+            // For example, if profile depends on job types: providerProfileProvider.setJobTypeProvider(context.read<JobTypeProvider>());
+            return providerProfileProvider;
+          },
+        ),
         Provider<ApiClient>(
           create: (context) {
             print('ApiClient provided');
@@ -123,41 +142,35 @@ class MyApp extends StatelessWidget {
             return JobProvider(context.read<JobRepository>());
           },
         ),
-        ChangeNotifierProvider(
-          create: (_) => ProviderJobRequestProvider(providerJobRequestRepository),
-        ),
       ],
       child: MaterialApp(
-        title: 'Local Services',
+        title: 'Local Services Aggregator',
         theme: AppTheme.lightTheme,
-        home: Consumer<AuthProvider>(
-          builder: (context, authProvider, _) {
-            if (authProvider.isLoading) {
-              return const Scaffold(
-                body: Center(
-                  child: CircularProgressIndicator(),
-                ),
-              );
-            }
-
-            if (authProvider.isLoggedIn) {
-              return authProvider.isProvider
-                  ? const ProviderHomeScreen()
-                  : const CustomerHomeScreen();
-            }
-
-            return const LoginScreen();
-          },
-        ),
+        initialRoute: authRepository.isLoggedIn
+            ? (authRepository.getCurrentUser()?.role == 'provider'
+                ? AppRoutes.providerHome
+                : AppRoutes.customerHome)
+            : AppRoutes.login,
         routes: {
-          '/login': (context) => const LoginScreen(),
-          '/register': (context) => const RegisterScreen(),
-          '/customer-home': (context) => const CustomerHomeScreen(),
-          '/provider-home': (context) => const ProviderHomeScreen(),
-          '/notifications': (context) => const NotificationScreen(),
-          '/customer-profile-setup': (context) => const CustomerProfileSetupScreen(),
+          AppRoutes.login: (context) => const LoginScreen(),
+          AppRoutes.register: (context) => const RegisterScreen(),
+          AppRoutes.customerHome: (context) => const CustomerHomeScreen(),
+          AppRoutes.providerHome: (context) => const ProviderHomeScreen(),
+          AppRoutes.notification: (context) => const NotificationScreen(),
+          AppRoutes.customerProfileSetup: (context) => const CustomerProfileSetupScreen(),
+          AppRoutes.providerProfile: (context) => const ProviderProfileScreen(),
         },
       ),
     );
   }
+}
+
+class AppRoutes {
+  static const String login = '/';
+  static const String register = '/register';
+  static const String customerHome = '/customer-home';
+  static const String providerHome = '/provider-home';
+  static const String notification = '/notifications';
+  static const String customerProfileSetup = '/customer-profile-setup';
+  static const String providerProfile = '/provider-profile';
 }

@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
-import '../../widgets/app_drawer.dart';
+import '../../providers/notification_provider.dart';
+import '../../widgets/provider_app_drawer.dart';
 import '../jobs/provider_requested_jobs_screen.dart';
+import '../notifications/provider_notification_screen.dart';
+import '../../../main.dart'; // Import AppRoutes
 
 class ProviderHomeScreen extends StatelessWidget {
   const ProviderHomeScreen({super.key});
@@ -11,13 +14,61 @@ class ProviderHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
+    final notificationProvider = context.watch<NotificationProvider>();
     final user = authProvider.user;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Provider Dashboard'),
+        actions: [
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_outlined, color: AppTheme.textColor),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ProviderNotificationScreen(),
+                    ),
+                  );
+                },
+              ),
+              if (notificationProvider.unreadNotificationsCount > 0)
+                Positioned(
+                  right: 11,
+                  top: 11,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 14,
+                      minHeight: 14,
+                    ),
+                    child: Text(
+                      '${notificationProvider.unreadNotificationsCount}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 8,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () {
+              Navigator.of(context).pushNamed(AppRoutes.providerProfile);
+            },
+          ),
+        ],
       ),
-      drawer: const AppDrawer(),
+      drawer: const ProviderAppDrawer(),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
