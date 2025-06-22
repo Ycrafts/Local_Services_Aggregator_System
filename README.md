@@ -61,7 +61,7 @@ This is a full-stack application that serves as a platform for aggregating local
 -   **PHP Version**: 8.2
 -   **Authentication**: Laravel Sanctum
 -   **Admin Panel**: Filament 3
--   **Database**: (Not specified, but likely MySQL, PostgreSQL, or SQLite)
+-   **Database**: PostgreSQL
 
 ### Frontend
 -   **Framework**: Flutter 3
@@ -145,7 +145,7 @@ A summary of the main API endpoints. All protected routes require `auth:sanctum`
 -   Composer
 -   Node.js & npm
 -   Flutter SDK
--   A database server (e.g., MySQL, PostgreSQL)
+-   PostgreSQL
 
 ### Backend Setup
 1.  Navigate to the `backend` directory: `cd backend`
