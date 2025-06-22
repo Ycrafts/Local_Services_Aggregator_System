@@ -54,6 +54,11 @@ This is a full-stack application that serves as a platform for aggregating local
   </tr>
 </table>
 
+### Admin Panel Screenshots
+![Admin Screenshot 1](backend/screenshots/Screenshot%202025-06-22%20122103.png)
+![Admin Screenshot 2](backend/screenshots/Screenshot%202025-06-22%20122154.png)
+![Admin Screenshot 3](backend/screenshots/Screenshot%202025-06-22%20122242.png)
+
 ## 🛠️ Technology Stack
 
 ### Backend
