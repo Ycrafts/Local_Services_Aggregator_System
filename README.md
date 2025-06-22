@@ -27,6 +27,33 @@ This is a full-stack application that serves as a platform for aggregating local
 -   **Dashboard**: An admin panel to manage users, jobs, job types, and other aspects of the system.
 -   **Analytics**: View analytics and insights about the platform's usage.
 
+## 📱 Screenshots
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="frontend/assets/images/Screenshot_20250622_112148.png" alt="Screenshot 1" width="250">
+    </td>
+    <td align="center">
+      <img src="frontend/assets/images/Screenshot_20250622_112159.png" alt="Screenshot 2" width="250">
+    </td>
+    <td align="center">
+      <img src="frontend/assets/images/Screenshot_20250622_112206.png" alt="Screenshot 3" width="250">
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="frontend/assets/images/Screenshot_20250622_112258.png" alt="Screenshot 4" width="250">
+    </td>
+    <td align="center">
+      <img src="frontend/assets/images/Screenshot_20250622_112319.png" alt="Screenshot 5" width="250">
+    </td>
+    <td align="center">
+      <img src="frontend/assets/images/Screenshot_20250622_112336.png" alt="Screenshot 6" width="250">
+    </td>
+  </tr>
+</table>
+
 ## 🛠️ Technology Stack
 
 ### Backend
