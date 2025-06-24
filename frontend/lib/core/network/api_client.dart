@@ -11,6 +11,9 @@ class ApiClient {
       baseUrl: ApiConfig.baseUrl,
       connectTimeout: const Duration(seconds: 30),
       receiveTimeout: const Duration(seconds: 30),
+      validateStatus: (status) {
+        return status! < 500;
+      },
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
@@ -27,9 +30,10 @@ class ApiClient {
       },
       onError: (DioException e, handler) {
         if (e.response?.statusCode == 401) {
-          // Handle token expiration
-          _prefs.remove('token');
-          // TODO: Navigate to login screen
+          // Only remove token if it's an authentication error
+          if (e.response?.data?['message']?.toString().toLowerCase().contains('unauthenticated') ?? false) {
+            _prefs.remove('token');
+          }
         }
         return handler.next(e);
       },
@@ -38,7 +42,15 @@ class ApiClient {
 
   Future<Response> get(String path, {Map<String, dynamic>? queryParameters}) async {
     try {
-      return await _dio.get(path, queryParameters: queryParameters);
+      final response = await _dio.get(path, queryParameters: queryParameters);
+      if (response.statusCode == 401) {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          type: DioExceptionType.badResponse,
+        );
+      }
+      return response;
     } catch (e) {
       rethrow;
     }
@@ -46,7 +58,15 @@ class ApiClient {
 
   Future<Response> post(String path, {dynamic data}) async {
     try {
-      return await _dio.post(path, data: data);
+      final response = await _dio.post(path, data: data);
+      if (response.statusCode == 401) {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          type: DioExceptionType.badResponse,
+        );
+      }
+      return response;
     } catch (e) {
       rethrow;
     }
@@ -54,7 +74,15 @@ class ApiClient {
 
   Future<Response> put(String path, {dynamic data}) async {
     try {
-      return await _dio.put(path, data: data);
+      final response = await _dio.put(path, data: data);
+      if (response.statusCode == 401) {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          type: DioExceptionType.badResponse,
+        );
+      }
+      return response;
     } catch (e) {
       rethrow;
     }
@@ -62,7 +90,15 @@ class ApiClient {
 
   Future<Response> delete(String path) async {
     try {
-      return await _dio.delete(path);
+      final response = await _dio.delete(path);
+      if (response.statusCode == 401) {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          type: DioExceptionType.badResponse,
+        );
+      }
+      return response;
     } catch (e) {
       rethrow;
     }

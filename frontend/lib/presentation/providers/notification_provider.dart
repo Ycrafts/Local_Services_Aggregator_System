@@ -185,4 +185,16 @@ class NotificationProvider with ChangeNotifier {
     _error = null;
     notifyListeners();
   }
+
+  void clearAll() {
+    _notifications = [];
+    _isLoading = false;
+    _error = null;
+    _currentPage = 1;
+    _hasMorePages = true;
+    _totalUnreadCount = 0;
+    _isCountingUnread = false;
+    _lastReadTimestamp = null;
+    notifyListeners();
+  }
 } 

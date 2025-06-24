@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import '../../domain/models/user.dart';
 import '../../domain/repositories/auth_repository.dart';
+import 'notification_provider.dart';
 import 'profile_provider.dart';
 
 class AuthProvider with ChangeNotifier {
@@ -10,6 +11,7 @@ class AuthProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   ProfileProvider? _profileProvider;
+  NotificationProvider? _notificationProvider;
 
   AuthProvider(this._authRepository) {
     _user = _authRepository.getCurrentUser();
@@ -17,6 +19,10 @@ class AuthProvider with ChangeNotifier {
 
   void setProfileProvider(ProfileProvider provider) {
     _profileProvider = provider;
+  }
+
+  void setNotificationProvider(NotificationProvider provider) {
+    _notificationProvider = provider;
   }
 
   User? get user => _user;
@@ -36,6 +42,8 @@ class AuthProvider with ChangeNotifier {
       _user = await _authRepository.login(phoneNumber, password);
       // Clear profile cache when logging in
       _profileProvider?.clearCache();
+      // Fetch notifications for the new user
+      await _notificationProvider?.refreshNotifications();
       _isLoading = false;
       notifyListeners();
       return true;
@@ -90,6 +98,7 @@ class AuthProvider with ChangeNotifier {
       _user = null;
       // Clear profile cache when logging out
       _profileProvider?.clearCache();
+      _notificationProvider?.clearAll();
       _isLoading = false;
       notifyListeners();
     } catch (e) {

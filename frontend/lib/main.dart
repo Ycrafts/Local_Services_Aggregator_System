@@ -98,9 +98,11 @@ class MyApp extends StatelessWidget {
           },
         ),
         ChangeNotifierProvider(
-          create: (_) {
+          create: (context) {
             print('NotificationProvider created');
-            return NotificationProvider(notificationRepository);
+            final notificationProvider = NotificationProvider(notificationRepository);
+            context.read<AuthProvider>().setNotificationProvider(notificationProvider);
+            return notificationProvider;
           },
         ),
         ChangeNotifierProvider(
@@ -146,6 +148,7 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Local Services Aggregator',
         theme: AppTheme.lightTheme,
+        debugShowCheckedModeBanner: false,
         initialRoute: authRepository.isLoggedIn
             ? (authRepository.getCurrentUser()?.role == 'provider'
                 ? AppRoutes.providerHome

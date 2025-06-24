@@ -1,5 +1,5 @@
 class ApiConfig {
-  static const String baseUrl = 'http://192.168.0.162:8000/api'; // For Android emulator
+  static const String baseUrl = 'http://192.168.100.41:8000/api'; // For Android emulator
   
   // Auth Endpoints
   static const String login = '/auth/login';
